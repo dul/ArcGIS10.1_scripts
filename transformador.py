@@ -40,7 +40,7 @@ try:
 			try:
 				arcpy.Project_management(archivo, nombreNuevoShape, sistemaDeCoordenadasDeSalida, None, sistemaDeCoordenadasDeEntrada)
 			except:
-				 arcpy.AddMessage("El archivo " + archivo + " no pudo ser convertido.")
+				arcpy.AddMessage("El archivo " + archivo + " no pudo ser convertido.")
 
 # manejo de excepciones
 except arcpy.ExecuteError:
