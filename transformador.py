@@ -4,6 +4,7 @@
 # Description: Recibe un directorio de entrada. Busca todos los archivos .shp en el directorio
 # y les ejecuta la funcion Proyectar. Crea un nuevo directorio hermano del de
 # entrada y pone los archivos de salida en éste.
+#~ Si el directorio ya existe, creo otro con el numero de copia al final del nombre
 # Ejemplo de ejecución unitaria de Proyectar:
 #~ # Local variables:
 #~ Complejo_de_Energia_Ene = "Complejo_de_Energia_Ene"
@@ -29,8 +30,15 @@ try:
 	# creacion de nuevo directorio
 	os.chdir(os.path.dirname(directorioDeEntrada))
 	nuevoDirectorio = directorioDeEntrada + 'Proyectado'
+	# Si el directorio ya existe, creo otro con el numero de copia al final del nombre
+	if (os.path.exists(nuevoDirectorio)):
+		i = 1
+		while (os.path.exists(nuevoDirectorio+str(i))):
+			i = i+1
+		nuevoDirectorio = nuevoDirectorio + str(i)
 	os.mkdir(nuevoDirectorio)
-
+	
+	
 	# obtencion de archivos .shp en directorioDeEntrada
 	listaArchivos = []
 	for archivo in os.listdir(directorioDeEntrada):

@@ -9,8 +9,7 @@ Summary
 	Recibe un .shp y un field. Genera un .shp por cada valor distinto de field.
 	Los archivos generados se nombran: shapeAdividir + field + número + .shp
 	y se ubican en un direcotrio nuevo llamado shapeAdividir + '_divididoPor_' + field
-	Si el directorio ya existe, creo otro con 'copia_X' al final del nombre
-	donde X es el numero de copia.
+	Si el directorio ya existe, creo otro con el numero de copia al final del nombre.
 	Ejemplo: se ingresa el archivo 'Red_Vial.shp' y se lo quiere dividir por 
 	el campo 'Tipo'. Los archivos generados serán: Red_VialTipo0.shp, Red_VialTipo1.shp...
 
@@ -40,8 +39,7 @@ try:
 	# creacion de nuevo directorio con nombre shapeAdividir + '_divididoPor_' + field
 	os.chdir(os.path.dirname(shapeAdividir))
 	nuevoDirectorio = shapeAdividir[:-4] + '_divididoPor_' + field
-	# Si el directorio ya existe, creo otro con 'copia_X' al final del nombre
-	# donde X es el numero de copia
+	# Si el directorio ya existe, creo otro con el numero de copia al final del nombre
 	if (os.path.exists(nuevoDirectorio)):
 		i = 1
 		while (os.path.exists(nuevoDirectorio+str(i))):
