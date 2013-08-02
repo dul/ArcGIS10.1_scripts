@@ -1,11 +1,16 @@
 import os
 import sys
 import arcpy
- 
+import shutil
+import ntpath
+
 """
 Summary
 	Recibe un .shp y un field. Genera un .shp por cada valor distinto de field.
-	Los archivos generados se nombran: shapeAdividir + field + número + .shp. 
+	Los archivos generados se nombran: shapeAdividir + field + número + .shp
+	y se ubican en un direcotrio nuevo llamado shapeAdividir + '_divididoPor_' + field
+	Si el directorio ya existe, creo otro con 'copia_X' al final del nombre
+	donde X es el numero de copia.
 	Ejemplo: se ingresa el archivo 'Red_Vial.shp' y se lo quiere dividir por 
 	el campo 'Tipo'. Los archivos generados serán: Red_VialTipo0.shp, Red_VialTipo1.shp...
 
@@ -28,10 +33,23 @@ Para el seteo de Parámetros:
 
 
 try:
+	# Obtencion de los parámetros
 	shapeAdividir = arcpy.GetParameterAsText(0)
 	field = arcpy.GetParameterAsText(1)
 
-	# obtención de fieldDistinto 
+	# creacion de nuevo directorio con nombre shapeAdividir + '_divididoPor_' + field
+	os.chdir(os.path.dirname(shapeAdividir))
+	nuevoDirectorio = shapeAdividir[:-4] + '_divididoPor_' + field
+	# Si el directorio ya existe, creo otro con 'copia_X' al final del nombre
+	# donde X es el numero de copia
+	if (os.path.exists(nuevoDirectorio)):
+		i = 1
+		while (os.path.exists(nuevoDirectorio+str(i))):
+			i = i+1
+		nuevoDirectorio = nuevoDirectorio + str(i)
+	os.mkdir(nuevoDirectorio)
+	
+	# obtencion de fieldDistinto 
 	listaFieldDistintos = []
 	totalFields = arcpy.SearchCursor(shapeAdividir, None, None, field)
 	for valor in totalFields:
@@ -41,11 +59,15 @@ try:
 	c = 0
 	for fieldDistinto in listaFieldDistintos:
 		# nombre del nuevo shape generado
-		nombreNuevoShape = shapeAdividir + field + str(c) + '.shp'
+		nombreNuevoArchivo = ntpath.basename(shapeAdividir)[:-4] + field + str(c) + '.shp'
+		nombreNuevoShape = os.path.join(nuevoDirectorio, nombreNuevoArchivo)
+		arcpy.AddMessage(nombreNuevoShape)
+
 		c = c+1
 		# generación del nuevo shape
 		where_clause = '"'+ field + '"=\'' + fieldDistinto + '\''
 		arcpy.Select_analysis(shapeAdividir, nombreNuevoShape, where_clause)
+		
 
 
 # manejo de excepciones
