@@ -46,6 +46,7 @@ def escribir_sobre_archivo_nuevo(csv_in_lectura, csv_in, mapa):
 	#Tomo los marcadores del mapa y los escribo en el archivo 
 	#'csv_in_escritura'
 	for marcador in arcpy.mapping.ListBookmarks(mapa):
+		arcpy.AddMessage("Voy a escribir "+marcador.name)
 		my_writer.writerow([marcador.name])
 	#Cierro 'csv_in_escritura'
 	csv_in_escritura.close()
@@ -127,6 +128,12 @@ try:
 # manejo de excepciones
 except arcpy.ExecuteError:
 	arcpy.AddError(arcpy.GetMessages(2))
+except csv.Error as e:
+	arcpy.AddWarning("Error al intentar escribir sobre el archivo .csv.")
+	arcpy.AddError(e.args[0])
+except IOError as e:
+	arcpy.AddWarning("Error. Puede ser que otro programa esté usando el archivo. Ciérrelo y vuelva a ejecutar la herramienta.")
+	arcpy.AddError(e.args[0])
 except Exception as e:
-	arcpy.AddWarning("Error. Es posible que no tenga permisos para abrir el archivo porque otro programa lo esta usando.")
+	arcpy.AddWarning("Error no identificado.")
 	arcpy.AddError(e.args[0])
