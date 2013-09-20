@@ -33,6 +33,67 @@ Para el seteo de Parámetros:
 			Filtro: Ninguno
 """
 
+import csv, codecs, cStringIO
+
+class UTF8Recoder:
+    """
+    Iterator that reads an encoded stream and reencodes the input to UTF-8
+    """
+    def __init__(self, f, encoding):
+        self.reader = codecs.getreader(encoding)(f)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self.reader.next().encode("latin-1")
+
+class UnicodeReader:
+    """
+    A CSV reader which will iterate over lines in the CSV file "f",
+    which is encoded in the given encoding.
+    """
+
+    def __init__(self, f, dialect=csv.excel, encoding="latin-1", **kwds):
+        f = UTF8Recoder(f, encoding)
+        self.reader = csv.reader(f, dialect=dialect, **kwds)
+
+    def next(self):
+        row = self.reader.next()
+        return [unicode(s, "latin-1") for s in row]
+
+    def __iter__(self):
+        return self
+
+class UnicodeWriter:
+    """
+    A CSV writer which will write rows to CSV file "f",
+    which is encoded in the given encoding.
+    """
+
+    def __init__(self, f, dialect=csv.excel, encoding="latin-1", **kwds):
+        # Redirect output to a queue
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
+
+    def writerow(self, row):
+        self.writer.writerow([s.encode("latin-1") for s in row])
+        # Fetch UTF-8 output from the queue ...
+        data = self.queue.getvalue()
+        data = data.decode("latin-1")
+        # ... and reencode it into the target encoding
+        data = self.encoder.encode(data)
+        # write to the target stream
+        self.stream.write(data)
+        # empty queue
+        self.queue.truncate(0)
+
+    def writerows(self, rows):
+        for row in rows:
+            self.writerow(row)
+
 """Recibe un archivo csv nuevo (vacio) en modo lectura, la ruta csv_in donde se escribirá
 y el mapa .mxd. Escribe todos los marcadores del mapa en csv_in."""
 def escribir_sobre_archivo_nuevo(csv_in_lectura, csv_in, mapa):
@@ -40,13 +101,12 @@ def escribir_sobre_archivo_nuevo(csv_in_lectura, csv_in, mapa):
 	csv_in_lectura.close()
 	#Abro 'csv_in' en modo escritura en 'csv_in_escritura'
 	csv_in_escritura = open(csv_in, 'wb')
-	my_writer = csv.writer(csv_in_escritura, delimiter=';')
+	my_writer = UnicodeWriter(csv_in_escritura, delimiter=';')
 	# Escribo header en el archivo nuevo
 	my_writer.writerow(["Nombre del marcador", "Estado", "Observaciones"])
 	#Tomo los marcadores del mapa y los escribo en el archivo 
 	#'csv_in_escritura'
 	for marcador in arcpy.mapping.ListBookmarks(mapa):
-		arcpy.AddMessage("Voy a escribir "+marcador.name)
 		my_writer.writerow([marcador.name])
 	#Cierro 'csv_in_escritura'
 	csv_in_escritura.close()
@@ -61,7 +121,7 @@ def actualizar_lista_de_marcadores(my_writer, my_reader, mapa):
 		#Si está en el archivo 'csv_in_lectura':
 		encontrado = False
 		for row in my_reader:
-			if my_reader.line_num == 0:
+			if my_reader.reader.line_num == 0:
 				pass
 			elif marcador.name==row[0]:
 				encontrado = True
@@ -84,11 +144,11 @@ def escribir_sobre_archivo_no_vacio (csv_in_lectura, mapa, csv_in):
 	#Creo un archivo nuevo en modo escritura en 'csv_out_escritura', 
 	#llamado 'temp.csv'
 	csv_out_escritura = open('temp.csv','wb')
-	my_writer = csv.writer(csv_out_escritura, delimiter=';')
+	my_writer = UnicodeWriter(csv_out_escritura, delimiter=';')
 	#Cierro csv_in como 'ab' y abro como 'rb'
 	csv_in_lectura.close()
 	csv_in_lectura = open(csv_in, 'rb')
-	my_reader = csv.reader(csv_in_lectura, delimiter=';')
+	my_reader = UnicodeReader(csv_in_lectura, delimiter=';')
 	
 	actualizar_lista_de_marcadores(my_writer, my_reader, mapa)
 
