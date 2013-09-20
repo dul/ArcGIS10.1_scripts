@@ -113,28 +113,39 @@ def escribir_sobre_archivo_nuevo(csv_in_lectura, csv_in, mapa):
 
 """Encargado de la logística de actualización de lista de marcadores. 
 Agrega los nuevos y mantiene los comentarios de los pre-existentes."""
-def actualizar_lista_de_marcadores(my_writer, my_reader, mapa):
+def actualizar_lista_de_marcadores(my_writer, my_reader, csv_in_lectura, mapa):
 	# Escribo header en el archivo nuevo
 	my_writer.writerow(["Nombre del marcador", "Estado", "Observaciones"])
 	#Por cada marcador del mapa:
 	for marcador in arcpy.mapping.ListBookmarks(mapa):
 		#Si está en el archivo 'csv_in_lectura':
+		
 		encontrado = False
 		for row in my_reader:
-			if my_reader.reader.line_num == 0:
-				pass
-			elif marcador.name==row[0]:
+			nombreParaComparar = marcador.name.encode("latin-1")
+			if nombreParaComparar==row["Nombre del marcador"]:
 				encontrado = True
 				#Copio toda la línea que figura en 'csv_in_ectura' para 
 				#ese marcador en 'csv_out_escritura'
-				my_writer.writerow(row)
+				if row["Estado"] == None:
+					campoEstado = ""
+				else:
+					campoEstado = row["Estado"]
+				if row["Observaciones"] == None:
+					campoObs = ""
+				else:
+					campoObs = row["Observaciones"]
+				
+				valoresAescribir = [marcador.name,campoEstado,campoObs]
+				my_writer.writerow(valoresAescribir)
 				break
 
 		#Si no está en el archivo 'csv_in_lectura':
 		if encontrado == False:
 			#Agrego el marcador a 'csv_out'
 			my_writer.writerow([marcador.name])
-
+		
+		csv_in_lectura.seek(0)
 
 """Recibe un archivo csv no vacío en modo lectura, la ruta csv_in donde 
 se escribirá y el mapa .mxd. Escribe todos los marcadores nuevos del mapa 
@@ -148,9 +159,9 @@ def escribir_sobre_archivo_no_vacio (csv_in_lectura, mapa, csv_in):
 	#Cierro csv_in como 'ab' y abro como 'rb'
 	csv_in_lectura.close()
 	csv_in_lectura = open(csv_in, 'rb')
-	my_reader = UnicodeReader(csv_in_lectura, delimiter=';')
+	my_reader = csv.DictReader(csv_in_lectura, delimiter=';')
 	
-	actualizar_lista_de_marcadores(my_writer, my_reader, mapa)
+	actualizar_lista_de_marcadores(my_writer, my_reader, csv_in_lectura, mapa)
 
 	#Cierro 'csv_out_escritura'
 	csv_out_escritura.close()
