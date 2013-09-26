@@ -48,60 +48,73 @@ Por esta razón, la solución que estamos diseñando incluye una combinación
 de ejecuciones de la herramienta Intersect y la herramienta Buffer, entre 
 otras, y no utiliza (al menos por el momento) Near.
 
-1) Creo una capa que contiene los puntos donde se intersecan 2 capas de lineas
-(ejemplo, guardo las intersecciones entre Red_Vial y Cursos_Agua) usando 
-arcpy.Intersect_analisys([Red_Vial, Cursos_Agua], "ALL", "POINT")
-2) Ejecuto la herramienta Buffer sobre la capa de intersecciones, para que me
-genere polígonos de radio X al rededor de cada punto de intersección
-Cada polígino tiene guardado en su tabla de atributos las coordenadas de
-su centro.
-3) Creo una capa "salvaobstaculosDeInteres" que resulta de aplicar Interesct 
-entre la capa de salvaobstáculos y la capa de polígonos circulares.
-4) Calculo las distancias entre cada salvaobstáculos y el centro del polígono
-con el que intersecan. Lo guardo en un nuevo campo de la tabla de atributos
-de salvaobstaculosDeInteres.
-5) Mergeo salvaobstaculosDeInteres con la capa de salvaobstaculos original.
-
-Para cada puente, decime si interseca cona algún polígono. Si interseca,
-decime con cuál.
-El polígono tiene guardada referencia a la intersección. Tomo la intersección
-del polígono y ésta tiene referencia a las líneas que la generan.
-A cada puente que interseca con polígono le agrego 2 campos:
-- distancia con intersección
-- referencia a líneas de intersección
+Opciones:
+	1) Creo capa InterseccionLinea1Linea2 que contiene los puntos de interseccion
+	entre dos capas de lineas Linea1 y Linea2
+	2) Creo capa InterseccionInterseccionesSalvaconductos que conteine los puntos
+	que coinciden entre los de la capa InterseccionLinea1Linea2 y los de la capa
+	Salvaconductos
+	3) Agrego un campo "Coincide con interseccion" a Salvaconductos
+	4) A cada elemento de Salvaconductos que se halle en
+	InterseccionInterseccionesSalvaconductos le pongo el valor TRUE en "Coincide..."
+	al resto le pongo FALSE.
+--------------------------------------------------------------------------------
+	1) Creo una capa que contiene los puntos donde se intersecan 2 capas de lineas
+	(ejemplo, guardo las intersecciones entre Red_Vial y Cursos_Agua) usando 
+	arcpy.Intersect_analisys([Red_Vial, Cursos_Agua], "ALL", "POINT")
+	2) Ejecuto la herramienta Buffer sobre la capa de intersecciones, para que me
+	genere polígonos de radio X al rededor de cada punto de intersección
+	Cada polígino tiene guardado en su tabla de atributos las coordenadas de
+	su centro.
+	3) Creo una capa "salvaobstaculosDeInteres" que resulta de aplicar Interesct 
+	entre la capa de salvaobstáculos y la capa de polígonos circulares.
+	4) Calculo las distancias entre cada salvaobstáculos y el centro del polígono
+	con el que intersecan. Lo guardo en un nuevo campo de la tabla de atributos
+	de salvaobstaculosDeInteres.
+	5) Mergeo salvaobstaculosDeInteres con la capa de salvaobstaculos original.
+--------------------------------------------------------------------------------
+	Para cada puente, decime si interseca cona algún polígono. Si interseca,
+	decime con cuál.
+	El polígono tiene guardada referencia a la intersección. Tomo la intersección
+	del polígono y ésta tiene referencia a las líneas que la generan.
+	A cada puente que interseca con polígono le agrego 2 campos:
+	- distancia con intersección
+	- referencia a líneas de intersección
 
 arcpy.SelectLayerByLocation_management("Puente_Red_Vial_Puntos", "INTERSECT", 'Red_VialAdministra2_Intersec1', "", "NEW_SELECTION")
-
 
 """
 
 
 try:
 	# Obtencion de los parámetros
-	capa1 = arcpy.GetParameterAsText(0) # salvaosbstaculos
-	capa2 = arcpy.GetParameterAsText(1)
-	capa3 = arcpy.GetParameterAsText(2)
+	salvaobstaculos = arcpy.GetParameterAsText(0) # salvaosbstaculos
+	lineas1 = arcpy.GetParameterAsText(1)
+	lineas2 = arcpy.GetParameterAsText(2)
 	search_radius = arcpy.GetParameterAsText(3)
 	location = arcpy.GetParameterAsText(4)
 	angle = arcpy.GetParameterAsText(5)
-	
-	arcpy.DeleteField_management(capa1, ["NEAR_DIST", "NEAR_FC", "NEAR_FID"])
-	arcpy.DeleteField_management(capa2, ["NEAR_DIST", "NEAR_FC", "NEAR_FID"])
-	arcpy.DeleteField_management(capa3, ["NEAR_DIST", "NEAR_FC", "NEAR_FID"])
-	
-	# En el campo NEAR_DIST de capa3, guardo las mínimas distancias con capa2
-	arcpy.Near_analysis(capa3, capa2, search_radius, location, angle)
-	arcpy.AddMessage("Paso el primer near")
-	# Guardo en el nuevo shp 'temp.shp', los elementos de capa1
-	# cuyo valor de NEAR_DIST sea 0
-	temp = arcpy.Select_analysis(capa3, 'temp.shp', '"NEAR_DIST" < 0.5')
-	arcpy.AddMessage("Paso el select")
-	# En el campo NEAR_DIST de capa1, guardo las mínimas distancias con
-	# 'temp.shp'
-	arcpy.Near_analysis(capa1, temp, search_radius, location, angle)
-	arcpy.AddMessage("Paso el segundo near")
-	arcpy.Delete_management(temp)
-	arcpy.AddMessage("Paso el delete")
+	# 1) Creo capa InterseccionLinea1Linea2 que contiene los puntos de interseccion
+	# entre dos capas de lineas Linea1 y Linea2
+	intersect_L1_L2 = 'interseccion_lineas1_lineas2.shp'
+	arcpy.Intersect_analysis(lineas1;lineas2, intersect_L1_L2, "ALL", 1, "POINT")
+	# 2) Creo capa InterseccionInterseccionesSalvaobstaculos que conteine los puntos
+	# que coinciden entre los de la capa InterseccionLinea1Linea2 y los de la capa
+	# Salvaobstaculos
+	intersect_L1_l2_S = 'interseccion_lineas1_lineas2_Salvaobstaculos.shp'
+	arcpy.Intersect_analysis(intersect_L1_L2;salvaobstaculos, intersect_L1_l2_S, "ALL", 1, "POINT")
+	# 3) Agrego un campo "Coincide con interseccion" a Salvaobstaculos. Default: -1
+	arcpy.AddField_management(salvaobstaculos, "Ubicacion_correcta", "TEXT", "", "", "", "Ubicado sobre interseccion: 0", "", "")
+	arcpy.AssignDefaultToField_management (salvaobstaculos, "Ubicacion_correcta", "-1","")
+	# 4) A cada elemento de Salvaconductos que se halle en
+	# InterseccionInterseccionesSalvaconductos le pongo el valor 0 en "Coincide..."
+	# al resto le pongo -1.
+	for elemento in salvaobstaculos:
+		# Si elemento está en intersect_L1_L2_S
+		if elemento in intersect_L1_l2_S.ListElements:
+			# En el campo Ubicacion_Correcta poné 0
+		else:
+			# En el campo Ubicacion_correta poné -1
 
 # manejo de excepciones
 except arcpy.ExecuteError:
