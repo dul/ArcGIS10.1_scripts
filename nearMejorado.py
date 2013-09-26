@@ -49,11 +49,28 @@ de ejecuciones de la herramienta Intersect y la herramienta Buffer, entre
 otras, y no utiliza (al menos por el momento) Near.
 
 1) Creo una capa que contiene los puntos donde se intersecan 2 capas de lineas
-(ejemplo, guardo las intersecciones entre Red_Vial y Cursos_Agua)
+(ejemplo, guardo las intersecciones entre Red_Vial y Cursos_Agua) usando 
+arcpy.Intersect_analisys([Red_Vial, Cursos_Agua], "ALL", "POINT")
 2) Ejecuto la herramienta Buffer sobre la capa de intersecciones, para que me
-genere polígonos de radio X al rededor de cada putno de intersección
-3) 
+genere polígonos de radio X al rededor de cada punto de intersección
+Cada polígino tiene guardado en su tabla de atributos las coordenadas de
+su centro.
+3) Creo una capa "salvaobstaculosDeInteres" que resulta de aplicar Interesct 
+entre la capa de salvaobstáculos y la capa de polígonos circulares.
+4) Calculo las distancias entre cada salvaobstáculos y el centro del polígono
+con el que intersecan. Lo guardo en un nuevo campo de la tabla de atributos
+de salvaobstaculosDeInteres.
+5) Mergeo salvaobstaculosDeInteres con la capa de salvaobstaculos original.
 
+Para cada puente, decime si interseca cona algún polígono. Si interseca,
+decime con cuál.
+El polígono tiene guardada referencia a la intersección. Tomo la intersección
+del polígono y ésta tiene referencia a las líneas que la generan.
+A cada puente que interseca con polígono le agrego 2 campos:
+- distancia con intersección
+- referencia a líneas de intersección
+
+arcpy.SelectLayerByLocation_management("Puente_Red_Vial_Puntos", "INTERSECT", 'Red_VialAdministra2_Intersec1', "", "NEW_SELECTION")
 
 
 """
