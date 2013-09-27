@@ -1,7 +1,7 @@
 import os
 import sys
 import arcpy
-
+import ntpath
 """
 Summary
 
@@ -58,6 +58,25 @@ Opciones:
 	4) A cada elemento de Salvaconductos que se halle en
 	InterseccionInterseccionesSalvaconductos le pongo el valor TRUE en "Coincide..."
 	al resto le pongo FALSE.
+
+Problemas:
+	Al hacer interseccion entre lineas y puntos, los puntos de salida pueden 
+	estar repetidos. Se indicará un punto entrada para más de una línea
+	entrada. Habría que limpiarlospor valor único del campo FID_PUNTOENTRADA
+	El campo FID_PUNTOENTRADA  es el que me sirve de identificador del elemento
+	original para hacer la contrastacion con la capa total.
+--------------------------------------------------------------------------------
+	1) Creo capa InterseccionLinea1Linea2 que contiene los puntos de interseccion
+	entre dos capas de lineas Linea1 y Linea2
+	2) Creo capa InterseccionInterseccionesSalvaconductos que conteine los puntos
+	que coinciden entre los de la capa InterseccionLinea1Linea2 y los de la capa
+	Salvaconductos
+	3) Creo una capa buffer de anillos múltiples que rodeen los puntos de 
+	intersecciones de líneas.
+	4) Divido la capa de puentes por intersección con cada anillo, así el
+	usuario puede ver los puentes que se encuentran en los distintos rangos
+	de distancia de las posiciones correctas.
+
 --------------------------------------------------------------------------------
 	1) Creo una capa que contiene los puntos donde se intersecan 2 capas de lineas
 	(ejemplo, guardo las intersecciones entre Red_Vial y Cursos_Agua) usando 
@@ -91,31 +110,36 @@ try:
 	salvaobstaculos = arcpy.GetParameterAsText(0) # salvaosbstaculos
 	lineas1 = arcpy.GetParameterAsText(1)
 	lineas2 = arcpy.GetParameterAsText(2)
-	search_radius = arcpy.GetParameterAsText(3)
-	location = arcpy.GetParameterAsText(4)
-	angle = arcpy.GetParameterAsText(5)
+
 	# 1) Creo capa InterseccionLinea1Linea2 que contiene los puntos de interseccion
 	# entre dos capas de lineas Linea1 y Linea2
-	intersect_L1_L2 = 'interseccion_lineas1_lineas2.shp'
-	arcpy.Intersect_analysis(lineas1;lineas2, intersect_L1_L2, "ALL", 1, "POINT")
+	nombreArchivoIntermedio = arcpy.ValidateTableName(ntpath.basename(lineas1)[:-4]+ntpath.basename(lineas2)[:-4])
+	
+	arcpy.Intersect_analysis([lineas1,lineas2], nombreArchivoIntermedio, "ALL", "", "POINT")
+	arcpy.AddMessage("Hice el primer intersect, nombre "+ nombreArchivoIntermedio)
 	# 2) Creo capa InterseccionInterseccionesSalvaobstaculos que conteine los puntos
 	# que coinciden entre los de la capa InterseccionLinea1Linea2 y los de la capa
 	# Salvaobstaculos
-	intersect_L1_l2_S = 'interseccion_lineas1_lineas2_Salvaobstaculos.shp'
-	arcpy.Intersect_analysis(intersect_L1_L2;salvaobstaculos, intersect_L1_l2_S, "ALL", 1, "POINT")
-	# 3) Agrego un campo "Coincide con interseccion" a Salvaobstaculos. Default: -1
-	arcpy.AddField_management(salvaobstaculos, "COINCIDE", "TEXT", "", "", "", "Ubicado sobre interseccion: 0", "", "")
-	arcpy.AssignDefaultToField_management (salvaobstaculos, "COINCIDE", "-1","")
-	# 4) A cada elemento de Salvaconductos que se halle en
-	# InterseccionInterseccionesSalvaconductos le pongo el valor 0 en "COINCIDE"
-	# al resto le pongo -1.
-	rowsSalvaobs = arcpy.UpdateCursor(salvaobstaculos)
-	for rowS in rowsSalvaobs: 
-		rowsIntersect = arcpy.SearchCursor(intersect_L1_l2_S)
-		for rowI in rowsIntersect:
-			if rowI.FID == rowS.FID:
-				rowS.COINCIDE = 0
-				rowsSalvaobs.updateRow(rowS)
+	nombreArchivoFinal = arcpy.ValidateTableName(nombreArchivoIntermedio[:-4]+ntpath.basename(salvaobstaculos)[:-4])
+
+	arcpy.Intersect_analysis([nombreArchivoIntermedio,salvaobstaculos], nombreArchivoFinal, "ALL", "", "POINT")
+	arcpy.AddMessage("Hice el segundo intersect, nombre "+ nombreArchivoFinal)
+
+
+
+	#~ # 3) Agrego un campo "Coincide con interseccion" a Salvaobstaculos. Default: -1
+	#~ arcpy.AddField_management(salvaobstaculos, "COINCIDE", "TEXT", "", "", "", "Ubicado sobre interseccion: 0", "", "")
+	#~ arcpy.AssignDefaultToField_management (salvaobstaculos, "COINCIDE", "-1","")
+	#~ # 4) A cada elemento de Salvaconductos que se halle en
+	#~ # InterseccionInterseccionesSalvaconductos le pongo el valor 0 en "COINCIDE"
+	#~ # al resto le pongo -1.
+	#~ rowsSalvaobs = arcpy.UpdateCursor(salvaobstaculos)
+	#~ for rowS in rowsSalvaobs: 
+		#~ rowsIntersect = arcpy.SearchCursor(intersect_L1_l2_S)
+		#~ for rowI in rowsIntersect:
+			#~ if rowI.FID == rowS.FID:
+				#~ rowS.COINCIDE = 0
+				#~ rowsSalvaobs.updateRow(rowS)
 		
 
 # manejo de excepciones

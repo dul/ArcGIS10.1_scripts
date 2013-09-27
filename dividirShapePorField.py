@@ -5,6 +5,9 @@ import shutil
 import ntpath
 
 """
+TODO: CAMBIAR NOMBRE DE OUTPUTS. En lugar de shapeAdividir + field + número + .shp
+que sea shapeAdividir + field + valorDeField + .shp
+
 Summary
 	Recibe un .shp y un field. Genera un .shp por cada valor distinto de field.
 	Los archivos generados se nombran: shapeAdividir + field + número + .shp
@@ -31,6 +34,7 @@ Para el seteo de Parámetros:
 """
 
 
+
 try:
 	# Obtencion de los parámetros
 	shapeAdividir = arcpy.GetParameterAsText(0)
@@ -46,14 +50,14 @@ try:
 			i = i+1
 		nuevoDirectorio = nuevoDirectorio + str(i)
 	os.mkdir(nuevoDirectorio)
-	
+
 	# obtencion de fieldDistinto 
 	listaFieldDistintos = []
 	totalFields = arcpy.SearchCursor(shapeAdividir, None, None, field)
 	for valor in totalFields:
 		if valor.getValue(field) not in listaFieldDistintos:
 			listaFieldDistintos.append(valor.getValue(field))
-			
+
 	c = 0
 	for fieldDistinto in listaFieldDistintos:
 		# nombre del nuevo shape generado
@@ -65,7 +69,7 @@ try:
 		# generación del nuevo shape
 		where_clause = '"'+ field + '"=\'' + fieldDistinto + '\''
 		arcpy.Select_analysis(shapeAdividir, nombreNuevoShape, where_clause)
-		
+
 
 
 # manejo de excepciones
