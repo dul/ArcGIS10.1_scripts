@@ -104,17 +104,19 @@ try:
 	intersect_L1_l2_S = 'interseccion_lineas1_lineas2_Salvaobstaculos.shp'
 	arcpy.Intersect_analysis(intersect_L1_L2;salvaobstaculos, intersect_L1_l2_S, "ALL", 1, "POINT")
 	# 3) Agrego un campo "Coincide con interseccion" a Salvaobstaculos. Default: -1
-	arcpy.AddField_management(salvaobstaculos, "Ubicacion_correcta", "TEXT", "", "", "", "Ubicado sobre interseccion: 0", "", "")
-	arcpy.AssignDefaultToField_management (salvaobstaculos, "Ubicacion_correcta", "-1","")
+	arcpy.AddField_management(salvaobstaculos, "COINCIDE", "TEXT", "", "", "", "Ubicado sobre interseccion: 0", "", "")
+	arcpy.AssignDefaultToField_management (salvaobstaculos, "COINCIDE", "-1","")
 	# 4) A cada elemento de Salvaconductos que se halle en
-	# InterseccionInterseccionesSalvaconductos le pongo el valor 0 en "Coincide..."
+	# InterseccionInterseccionesSalvaconductos le pongo el valor 0 en "COINCIDE"
 	# al resto le pongo -1.
-	for elemento in salvaobstaculos:
-		# Si elemento está en intersect_L1_L2_S
-		if elemento in intersect_L1_l2_S.ListElements:
-			# En el campo Ubicacion_Correcta poné 0
-		else:
-			# En el campo Ubicacion_correta poné -1
+	rowsSalvaobs = arcpy.UpdateCursor(salvaobstaculos)
+	for rowS in rowsSalvaobs: 
+		rowsIntersect = arcpy.SearchCursor(intersect_L1_l2_S)
+		for rowI in rowsIntersect:
+			if rowI.FID == rowS.FID:
+				rowS.COINCIDE = 0
+				rowsSalvaobs.updateRow(rowS)
+		
 
 # manejo de excepciones
 except arcpy.ExecuteError:
