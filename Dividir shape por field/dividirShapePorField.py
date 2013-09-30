@@ -5,8 +5,8 @@ import shutil
 import ntpath
 
 """
-TODO: CAMBIAR NOMBRE DE OUTPUTS. En lugar de shapeAdividir + field + número + .shp
-que sea shapeAdividir + field + valorDeField + .shp
+Version 1
+
 
 Summary
 	Recibe un .shp y un field. Genera un .shp por cada valor distinto de field.
