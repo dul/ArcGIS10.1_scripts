@@ -2,6 +2,7 @@ import os
 import sys
 import arcpy
 import ntpath
+import shutil
 """
 Summary
 
@@ -110,22 +111,25 @@ try:
 	salvaobstaculos = arcpy.GetParameterAsText(0) # salvaosbstaculos
 	lineas1 = arcpy.GetParameterAsText(1)
 	lineas2 = arcpy.GetParameterAsText(2)
+	carpetaDeDestino = arcpy.GetParameterAsText(3)
 
 	# 1) Creo capa InterseccionLinea1Linea2 que contiene los puntos de interseccion
 	# entre dos capas de lineas Linea1 y Linea2
 	nombreArchivoIntermedio = arcpy.ValidateTableName(ntpath.basename(lineas1)[:-4]+ntpath.basename(lineas2)[:-4])
-	
-	arcpy.Intersect_analysis([lineas1,lineas2], nombreArchivoIntermedio, "ALL", "", "POINT")
-	arcpy.AddMessage("Hice el primer intersect, nombre "+ nombreArchivoIntermedio)
+	nombreNuevoShape1 = os.path.join(carpetaDeDestino, nombreArchivoIntermedio)	
+	arcpy.Intersect_analysis([lineas1,lineas2], nombreNuevoShape1, "ALL", "", "POINT")
+
 	# 2) Creo capa InterseccionInterseccionesSalvaobstaculos que conteine los puntos
 	# que coinciden entre los de la capa InterseccionLinea1Linea2 y los de la capa
 	# Salvaobstaculos
 	nombreArchivoFinal = arcpy.ValidateTableName(nombreArchivoIntermedio[:-4]+ntpath.basename(salvaobstaculos)[:-4])
+	nombreNuevoShape2 = os.path.join(carpetaDeDestino, nombreArchivoFinal)
+	arcpy.Intersect_analysis([nombreArchivoIntermedio,salvaobstaculos], nombreNuevoShape2, "ALL", "", "POINT")
 
-	arcpy.Intersect_analysis([nombreArchivoIntermedio,salvaobstaculos], nombreArchivoFinal, "ALL", "", "POINT")
-	arcpy.AddMessage("Hice el segundo intersect, nombre "+ nombreArchivoFinal)
 
-
+	nombreArchivoBuffer = arcpy.ValidateTableName('buffer'+nombreArchivoIntermedio[:-4])
+	nombreNuevoShape2 = os.path.join(carpetaDeDestino, nombreArchivoBuffer)
+	arcpy.MultipleRingBuffer_analysis(nombreArchivoIntermedio, nombreNuevoShape2, [200,100,50,10], "Meters", None, None, None)
 
 	#~ # 3) Agrego un campo "Coincide con interseccion" a Salvaobstaculos. Default: -1
 	#~ arcpy.AddField_management(salvaobstaculos, "COINCIDE", "TEXT", "", "", "", "Ubicado sobre interseccion: 0", "", "")
