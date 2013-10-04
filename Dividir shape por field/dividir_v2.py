@@ -6,8 +6,8 @@ import ntpath
 
 """
 Version 2
-Updates: CAMBIAR NOMBRE DE OUTPUTS. En lugar de shapeAdividir + field + número + .shp
-que sea shapeAdividir + field + valorDeField + .shp
+Updates: Nueva manera de nombrar outputs. En lugar de shapeAdividir + field + número + .shp
+ahora se llaman shapeAdividir + field + valorDeField + .shp
 
 Summary
 	Recibe un .shp y un field. Genera un .shp por cada valor distinto de field.
@@ -60,17 +60,25 @@ try:
 			listaFieldDistintos.append(valor.getValue(field))
 
 	#~ c = 0
+	arcpy.AddMessage("0")
 	for fieldDistinto in listaFieldDistintos:
 		# nombre del nuevo shape generado
-		nombreNuevoArchivo = arcpy.ValidateFieldName(ntpath.basename(shapeAdividir)[:-4] + fieldDistinto)
+		
+		nombreNuevoArchivo = arcpy.ValidateFieldName(ntpath.basename(shapeAdividir)[:-4] + str(fieldDistinto))
+		arcpy.AddMessage(type(fieldDistinto))
 		nombreNuevoShape = os.path.join(nuevoDirectorio, nombreNuevoArchivo)
 		arcpy.AddMessage(nombreNuevoShape)
-
+		arcpy.AddMessage("1")
 		#~ c = c+1
 		# generación del nuevo shape
-		where_clause = '"'+ field + '"=\'' + fieldDistinto + '\''
+		if type(fieldDistinto) != str:
+			arcpy.AddMessage("entre")
+			where_clause = '"'+ field + '"=%d' %fieldDistinto
+		else:
+			where_clause = '"'+ field + '"=\'' + fieldDistinto + '\''
+		arcpy.AddMessage("2")
 		arcpy.Select_analysis(shapeAdividir, nombreNuevoShape, where_clause)
-
+		arcpy.AddMessage("3")
 
 
 # manejo de excepciones
