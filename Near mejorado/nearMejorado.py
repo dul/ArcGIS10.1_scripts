@@ -51,17 +51,18 @@ try:
 
 	# 1) Creo capa InterseccionLinea1Linea2 que contiene los puntos de interseccion
 	# entre dos capas de lineas Linea1 y Linea2
-	nombreArchivoIntermedio = arcpy.ValidateTableName(ntpath.basename(lineas1)[:-4]+ntpath.basename(lineas2)[:-4])
+	#~ nombreArchivoIntermedio = arcpy.ValidateTableName(ntpath.basename(lineas1)[:-4]+ntpath.basename(lineas2)[:-4])
+	nombreArchivoIntermedio = arcpy.ValidateTableName('intermedio')
 	nombreNuevoShape1 = os.path.join(carpetaDeDestino, nombreArchivoIntermedio)	
 	arcpy.Intersect_analysis([lineas1,lineas2], nombreNuevoShape1, "ALL", "", "POINT")
-
+	arcpy.AddMessage("primer intersect")
 	# 2) Creo capa InterseccionInterseccionesSalvaobstaculos que conteine los puntos
 	# que coinciden entre los de la capa InterseccionLinea1Linea2 y los de la capa
 	# Salvaobstaculos
-	nombreArchivoFinal = arcpy.ValidateTableName(nombreArchivoIntermedio[:-4]+ntpath.basename(salvaobstaculos)[:-4])
+	nombreArchivoFinal = arcpy.ValidateTableName('final')
 	nombreNuevoShape2 = os.path.join(carpetaDeDestino, nombreArchivoFinal)
-	arcpy.Intersect_analysis([nombreArchivoIntermedio,salvaobstaculos], nombreNuevoShape2, "ALL", "", "POINT")
-
+	arcpy.Intersect_analysis([nombreNuevoShape1,salvaobstaculos], nombreNuevoShape2, "ALL", "", "POINT")
+	arcpy.AddMessage("segundo intersect")
 	# 3) Creo capa bufferInterseccionLinea1Linea2 con la herramienta
 	# MultipleRingBuffer_analysis, que crea polígonos circulares a 200,100,50,10
 	# metros de los puntos de InterseccionLinea1Linea2

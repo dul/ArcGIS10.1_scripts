@@ -37,6 +37,7 @@ class CreadorDeDirectorio(object):
 		if self.chequear_si_ya_existe():
 			self.redefinir_nombre()
 		os.mkdir(self.nombre)
+		return os.path.abspath(self.nombre)
     
     def borrar_directorio (self):
 		if self.chequear_si_ya_existe():
@@ -69,8 +70,6 @@ class ExtractorDeCampos (object):
 		self.in_feature = in_feature
 		self.field = field
 		
-		print "aaaaaaaaah" +self.in_feature
-		
 		self.cursor = None
 		self.listaFieldDistintos = []
 	
@@ -82,6 +81,33 @@ class ExtractorDeCampos (object):
 	def obtener_lista (self):
 		self.obtener_cursor()
 		for valor in self.cursor:
-			if valor.getValue(field) not in self.listaFieldDistintos:
-				self.listaFieldDistintos.append(valor.getValue(field))
+			valori = valor.getValue(self.field)
+			if valori not in self.listaFieldDistintos:
+				self.listaFieldDistintos.append(valori)
 		return self.listaFieldDistintos
+
+class DivisorDeShapePorCampo (object):
+	def __init__(self, shapeAdividir, campo):
+		self.shapeAdividir = shapeAdividir
+		self.campo = campo
+		
+	def dividir (self):
+		creadorDeDirectorio = CreadorDeDirectorio_PorField (os.path.dirname(self.shapeAdividir))	
+		carpetaDeDestino = creadorDeDirectorio.crear_directorio()
+
+		generador = GeneradorDeNuevosShapes(self.shapeAdividir, self.campo, carpetaDeDestino)
+		generador.generar()
+
+
+class GeneradorDeNuevosShapes (object):
+	
+	def __init__ (self, shapeOriginal, field, ubicacion):
+
+		self.shapeOriginal = shapeOriginal
+		self.field = field
+		self.carpetaDeDestino = ubicacion
+	
+	def generar (self):
+		extractorDeCampos = ExtractorDeCampos(self.shapeAdividir, self.campo)
+		lista = extractorDeCampos.obtener_lista()
+		
