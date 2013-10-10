@@ -1,4 +1,5 @@
 import arcpy
+import renameFields_logica
 
 # Recibe el nombre de un field de códigos, y el nombre de un field con
 # descripciones. Devuelve True si el field con descripciones corresponde
@@ -19,8 +20,6 @@ def obtener_lista_de_fields_a_borrar (outName):
 	
 	# Por cada campo que empiece con d_
 	for field_d in arcpy.ListFields(outName, 'd_*'):
-		campoActual = field_d.name
-		
 		# Itero sobre todos los campos
 		for field_c in arcpy.ListFields(outName):
 			# Si coinciden los primeros 8 caracteres de field_c, lo
@@ -39,7 +38,7 @@ try:
 	outLocation = arcpy.GetParameterAsText(1)
 	outName = arcpy.GetParameterAsText(2)
 	
-	#--- Lógica de conversión ---#
+	#--- Logica de conversion ---#
 	# Seteo la transferencia de dominios en True para que se copien las
 	# columnas con descripciones de los códigos
 	arcpy.env.transferDomains = True	
@@ -47,7 +46,6 @@ try:
 	
 	
 	#--- Limpiado de tablas de salida ---#
-	
 	# Me muevo al directorio de salida
 	arcpy.env.workspace = outLocation
 	lista_de_fields_a_borrar = obtener_lista_de_fields_a_borrar(outName)
@@ -55,6 +53,12 @@ try:
 	for field in lista_de_fields_a_borrar:
 		arcpy.DeleteField_management(outName, field)
 
+	#--- Restauracion de nombres de campos ---#
+	for field_c in lista_de_fields_a_borrar:
+		for field_d in arcpy.ListFields(outName, 'd_*'):
+			if (corresponde(field_c, field_d.name)):
+				renameFields_logica.renameFields(outName, field_d.name, field_c)
+	
 
 	
 # manejo de excepciones
