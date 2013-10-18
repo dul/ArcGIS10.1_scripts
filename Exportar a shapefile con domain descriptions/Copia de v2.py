@@ -1,4 +1,5 @@
 import arcpy
+import renameFields_logica
 import os
 from os import path
 
@@ -164,3 +165,7 @@ except arcpy.ExecuteError:
 except Exception as e:
 	print e.args[0]
 	arcpy.AddError(e.args[0])
+
+
+
+
