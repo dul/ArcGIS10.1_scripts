@@ -1,5 +1,4 @@
 import arcpy
-import renameFields_logica
 import os
 from os import path
 
@@ -72,47 +71,41 @@ def escribir_listas_archivo (listaDeCamposCorrectos, listaDeCamposIncorrectos, a
 			my_writer.writerow(['???',listaDeCamposCorrectos[i].name])
 			i = i+1
 
-"""Recibe una GDB y una carpeta de salida. Se recorren todos los datasets
-de la gdb y se obtienen todas las features que contienen. Por cada una de
-ellas, se la exporta a shapefile en la carpeta de salida y se genera un 
-.csv con las listas de atributos como aparecen en la gdb y de los mismos 
-tal cual aparecen en el shapefile exportado. Los archivos .csv son 
-nombrados agregando _atributos.csv al final del nombre de la feature
-y se ubican en la misma carpeta de salida de exportación."""
-def escribir_archivos_atributos (GDB, outLocation):
-	arcpy.env.workspace = GDB
-	datasets = arcpy.ListDatasets('','Feature')
+"""Recibe una GDB, una carpeta de salida y la lista de Feature Classes
+que el usuario quiere exportar. 
+Se exporta cada FC a shapefile en la carpeta de salida y en la misma se 
+genera un .csv con las listas de atributos como aparecen en la gdb y de 
+los mismos tal cual aparecen en el shapefile exportado. Los archivos .csv 
+son nombrados agregando _atributos.csv al final del nombre de la FC."""
 
-	for dataset in datasets:
-		arcpy.env.workspace = GDB + '\'' + dataset
-		for feature in arcpy.ListFeatureClasses():
+def escribir_archivos_atributos (GDB, outLocation, listaDeFCs):
+	arcpy.env.workspace = outLocation
+	for feature in listaDeFCs:
+		# Reseteo listas
+		lista_nombres_correctos = []
+		lista_nombres_incorrectos = []
+
+		# Obtengo los nombres de los campos tal cual figuran en la gdb
+		lista_nombres_correctos = obtener_lista_de_Campos(feature)
+
+		# Exporto con FeatureClassToFeatureClass
+		nuevo_nombre = os.path.basename(feature)+'_exp.shp'
+		arcpy.conversion.FeatureClassToFeatureClass(feature, outLocation, nuevo_nombre)
 		
-			# Reseteo listas
-			lista_nombres_correctos = []
-			lista_nombres_incorrectos = []
-			
-			# Obtengo los nombres de los campos tal cual figuran en la gdb
-			lista_nombres_correctos = obtener_lista_de_Campos(feature)
-			
-			# Exporto con FeatureClassToFeatureClass
-			nuevo_nombre = feature+'_exp.shp'
-			arcpy.conversion.FeatureClassToFeatureClass(feature, outLocation, nuevo_nombre)
-
-			# Obtengo los nombres de los campos como figuran en el shapefile
-			# recién creado
-			lista_nombres_incorrectos = obtener_lista_de_Campos(os.path.join(outLocation, nuevo_nombre))
-			
-			# Chequeo que se hayan exportado todos los campos desde la gdb.
-			# Si algunos campos se perdieron en la exportación, aviso.
-			if len(lista_nombres_incorrectos) != len(lista_nombres_correctos):
-				arcpy.AddWarning("En el archivo "+ nuevo_nombre + " la lista de campos exportados es de largo "+str(len(lista_nombres_incorrectos))+" mientras que la cantidad de campos original era "+str(len(lista_nombres_correctos)))
-			
-			# Creo y escribo en un archivo feature_atributos.csv las 
-			# listas de atributos
-			archivo_atributos = crear_csv_escritura(os.path.basename(feature)+'_atributos', outLocation)
-			escribir_listas_archivo (lista_nombres_correctos, lista_nombres_incorrectos, archivo_atributos)
-			cerrar_csv_escritura(archivo_atributos)
-
+		# Obtengo los nombres de los campos como figuran en el shapefile
+		# recién creado
+		lista_nombres_incorrectos = obtener_lista_de_Campos(os.path.join(outLocation, nuevo_nombre))
+		
+		# Chequeo que se hayan exportado todos los campos desde la gdb.
+		# Si algunos campos se perdieron en la exportación, aviso.
+		if len(lista_nombres_incorrectos) != len(lista_nombres_correctos):
+			arcpy.AddWarning("En el archivo "+ nuevo_nombre + " la lista de campos exportados es de largo "+str(len(lista_nombres_incorrectos))+" mientras que la cantidad de campos original era "+str(len(lista_nombres_correctos)))
+		
+		# Creo y escribo en un archivo feature_atributos.csv las 
+		# listas de atributos
+		archivo_atributos = crear_csv_escritura(os.path.basename(feature)+'_atributos', outLocation)
+		escribir_listas_archivo (lista_nombres_correctos, lista_nombres_incorrectos, archivo_atributos)
+		cerrar_csv_escritura(archivo_atributos)
 
 
 
@@ -146,15 +139,31 @@ def logica_dominios (GDB, outLocation):
 	escribir_archivo_dominios (dict_dominios, archivo_dominios)
 	cerrar_csv_escritura(archivo_dominios)
 
+def recuperar_FCs_de_lista (input_list):
+	output_list = []
+	palabra_pegada = ""
+	for item in input_list:
+		if item != "\'":
+			palabra_pegada += item
+	output_list = palabra_pegada.split(';')
+	return output_list
 
 
+
+	
 try:
 
 	GDB = arcpy.GetParameterAsText(0)
 	outLocation = arcpy.GetParameterAsText(1)
-	
-	escribir_archivos_atributos (GDB, outLocation)
+	listaDeFCs = arcpy.GetParameterAsText(2)
+		
+	# logica_dominios obtiene los dominios de toda la GDB independiente-
+	# mente de las FCs elegidas por el usuario
 	logica_dominios (GDB, outLocation) 
+	
+	listaDeFCs = recuperar_FCs_de_lista (listaDeFCs)
+	escribir_archivos_atributos (GDB, outLocation, listaDeFCs)
+
 
 	
 
@@ -165,7 +174,4 @@ except arcpy.ExecuteError:
 except Exception as e:
 	print e.args[0]
 	arcpy.AddError(e.args[0])
-
-
-
 
